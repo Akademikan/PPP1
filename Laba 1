@@ -1,0 +1,83 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class ATC {
+private:
+    static double Plata;
+    string address; 
+    int Kolichestvo; 
+
+public:
+    ATC(const std::string& addr, double fee):address(addr), Kolichestvo(0) {
+        Plata = fee;
+    }
+
+    
+    void addSubscriber() {
+        Kolichestvo++;
+    }
+
+   
+    double totalSubscriptionFee() const {
+        return Plata * Kolichestvo;
+    }
+
+  
+    static void setSubscriptionFee(double newFee) {
+        Plata = newFee;
+    }
+
+   
+    void displayInfo() const {
+        cout << "Адрес АТС: " << address << endl;
+        cout << "Число абонентов: " << Kolichestvo << endl;
+        cout << "Абонентская плата: " << Plata << endl;
+        cout << "Общая абонентская плата всех клиентов: " << totalSubscriptionFee() << endl;
+    }
+};
+
+
+double ATC::Plata = 0;
+;
+                                       
+int main() {
+    setlocale(LC_ALL, "Russian");
+    string address;
+    double fee;
+    int numSubscribers;
+
+    
+    cout << "Введите адрес АТС: ";
+    getline(cin, address);
+
+    cout << "Введите абонентскую плату: ";
+    cin >> fee;
+
+    
+    ATC atc(address, fee);
+
+    cout << "Введите количество абонентов для добавления: ";
+    cin >> numSubscribers;
+
+  
+    for (int i = 0; i < numSubscribers; ++i) {
+        atc.addSubscriber();
+    }
+
+  
+    atc.displayInfo();
+
+   
+    cout << "Введите новую абонентскую плату: ";
+    cin >> fee;
+    ATC::setSubscriptionFee(fee);
+
+   
+    atc.addSubscriber();
+    cout << "После добавления еще одного абонента:" << endl;
+    atc.displayInfo();
+
+    return 0;
+}
