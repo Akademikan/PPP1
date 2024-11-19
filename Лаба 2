@@ -1,0 +1,304 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include <limits>
+#include <cctype> 
+#include <sstream>
+using namespace std;
+
+class Tariff {
+private:
+    string title;
+    double price;
+
+public:
+    Tariff(const string& title, double price) : title(title), price(price) {}
+
+    string getTitle() const { return title; }
+    double getPrice() const { return price; }
+
+    void displayInfo() const {
+        cout << "Тариф: " << title << ", Цена за минуту: " << fixed << setprecision(0) << price << " рублей." << endl;
+    }
+};
+
+class Call {
+private:
+    string destination;
+    double duration;
+    string tariffTitle;
+
+public:
+    Call(const string& destination, double duration, const string& tariffTitle)
+        : destination(destination), duration(duration), tariffTitle(tariffTitle) {}
+
+    double getCost(const vector<Tariff>& tariffs) const {
+        for (const auto& tariff : tariffs) {
+            if (tariff.getTitle() == tariffTitle) {
+                return duration * tariff.getPrice();
+            }
+        }
+        return 0;
+    }
+};
+
+class Client {
+private:
+    string name;
+    vector<Call> calls;
+
+public:
+    Client(const string& name) : name(name) {}
+
+    void addCall(const Call& call) {
+        calls.push_back(call);
+    }
+
+    double calculateTotalCost(const vector<Tariff>& tariffs) const {
+        double totalCost = 0;
+        for (const auto& call : calls) {
+            totalCost += call.getCost(tariffs);
+        }
+        return totalCost;
+    }
+
+    string getName() const { return name; }
+    const vector<Call>& getCalls() const { return calls; }
+};
+
+class ATC {
+private:
+    vector<Tariff> tariffs;
+    vector<Client> clients;
+
+public:
+    void addTariff(const string& title, double price) {
+        tariffs.emplace_back(title, price);
+    }
+
+    void registerClient(const string& name) {
+        clients.emplace_back(name);
+    }
+
+    void addCallToClient(const string& clientName, const Call& call) {
+        for (auto& client : clients) {
+            if (client.getName() == clientName) {
+                client.addCall(call);
+                return;
+            }
+        }
+        cout << "Клиент с именем " << clientName << " не найден." << endl;
+    }
+
+    void showTariffs() const {
+        for (const auto& tariff : tariffs) {
+            tariff.displayInfo();
+        }
+    }
+
+    void showClients() const {
+        for (const auto& client : clients) {
+            cout << "Клиент: " << client.getName() << ", Звонки: " << client.getCalls().size() << endl;
+        }
+    }
+
+    double calculateTotalRevenue() const {
+        double totalRevenue = 0;
+        for (const auto& client : clients) {
+            totalRevenue += client.calculateTotalCost(tariffs);
+        }
+        return totalRevenue;
+    }
+
+    double calculateClientCost(const string& clientName) const {
+        for (const auto& client : clients) {
+            if (client.getName() == clientName) {
+                return client.calculateTotalCost(tariffs);
+            }
+        }
+        return 0;
+    }
+
+    const vector<Tariff>& getTariffs() const { return tariffs; } 
+    const vector<Client>& getClients() const { return clients; } 
+};
+
+void displayMenu() {
+    cout << "Меню:" << endl;
+    cout << "1. Добавить тариф." << endl;
+    cout << "2. Зарегистрировать клиента." << endl;
+    cout << "3. Добавить звонок клиенту." << endl;
+    cout << "4. Показать тарифы." << endl;
+    cout << "5. Показать клиентов." << endl;
+    cout << "6. Вычислить общую стоимость звонков клиента." << endl;
+    cout << "7. Вычислить общую стоимость всех звонков." << endl;
+    cout << "0. Выйти." << endl;
+}
+
+double getPositiveDouble() {
+    string input;
+    double value;
+    while (true) {
+        cin >> input;
+        istringstream iss(input);
+        if (!(iss >> value) || value < 0) {
+            cout << "Пожалуйста, введите положительное число: ";
+        }
+        else {
+            return value;
+        }
+    }
+}
+
+
+bool isValidTariffTitle(const string& title) {
+    for (char c : title) {
+        if (!isalpha(c) && !isspace(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool isValidClientName(const string& name) {
+    for (char c : name) {
+        if (!isalpha(c) && !isspace(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    ATC atc;
+    int input;
+
+    cout << "Добро пожаловать в АТС." << endl;
+
+    while (true) {
+        displayMenu();
+        cout << "Выберите действие: ";
+        input = 0;
+        cin >> input;
+
+        switch (input) {
+
+        case 1: {
+            string title;
+            double price;
+            cout << "Введите название тарифа: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, title);
+
+            while (!isValidTariffTitle(title)) {
+                cout << "Название тарифа должно содержать только буквы и пробелы. Попробуйте снова: ";
+                getline(cin, title);
+            }
+
+            cout << "Введите цену тарифа за минуту: ";
+            price = getPositiveDouble();
+            atc.addTariff(title, price);
+            cout << "Тариф добавлен." << endl;
+            break;
+
+        }
+
+        case 2: {
+            string name;
+            cout << "Введите имя клиента: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, name);
+
+            while (!isValidClientName(name)) {
+                cout << "Имя клиента должно содержать только буквы и пробелы. Попробуйте снова: ";
+                getline(cin, name);
+            }
+
+            atc.registerClient(name);
+            cout << "Клиент зарегистрирован." << endl;
+            break;
+        }
+
+        case 3: {
+            string clientName, destination, tariffTitle;
+            double duration;
+            cout << "Введите имя клиента: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, clientName);
+            cout << "Введите направление звонка: ";
+            getline(cin, destination);
+            cout << "Введите длительность звонка (в минутах): ";
+            duration = getPositiveDouble();
+
+            cout << "Доступные тарифы:" << endl;
+            atc.showTariffs();
+            cout << "Введите название тарифа: ";
+            getline(cin, tariffTitle);
+            atc.addCallToClient(clientName, Call(destination, duration, tariffTitle));
+            cout << "Звонок добавлен." << endl;
+            break;
+        }
+
+        case 4: {
+            if (atc.getTariffs().empty()) {
+                cout << "Тарифов нет. Пожалуйста, добавьте тариф." << endl;
+            }
+            else {
+                atc.showTariffs();
+            }
+            break;
+        }
+
+        case 5: {
+            if (atc.getClients().empty()) {
+                cout << "Клиентов нет. Пожалуйста, зарегистрируйте клиента." << endl;
+            }
+            else {
+                atc.showClients();
+            }
+            break;
+        }
+
+        case 6: {
+            string clientName;
+            cout << "Введите имя клиента: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, clientName);
+            double clientCost = atc.calculateClientCost(clientName);
+            if (clientCost > 0) {
+                cout << "Общая стоимость звонков клиента " << clientName << ": " << setprecision(0) << clientCost << " рублей." << endl;
+            }
+            else {
+                cout << "Клиент с именем " << clientName << " не найден или не имеет звонков." << endl;
+            }
+            break;
+        }
+
+        case 7: {
+            double totalRevenue = atc.calculateTotalRevenue();
+            if (totalRevenue > 0) {
+                cout << "Общая стоимость всех звонков: " << fixed << setprecision(0) << totalRevenue << " рублей." << endl;
+            }
+            else {
+                cout << "На данный момент нет звонков." << endl;
+            }
+            break;
+        }
+
+        case 0: {
+            cout << "Выход из программы." << endl;
+            return 0;
+        }
+
+        default: {
+            cout << "Неверный выбор. Попробуйте снова." << endl;
+            break;
+        }
+        }
+    }
+
+    return 0;
+}
