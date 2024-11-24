@@ -85,6 +85,7 @@ public:
         for (auto& client : clients) {
             if (client.getName() == clientName) {
                 client.addCall(call);
+                cout << "Звонок добавлен для клиента " << clientName << "." << endl; 
                 return;
             }
         }
@@ -114,9 +115,17 @@ public:
     double calculateClientCost(const string& clientName) const {
         for (const auto& client : clients) {
             if (client.getName() == clientName) {
-                return client.calculateTotalCost(tariffs);
+                double cost = client.calculateTotalCost(tariffs);
+                if (cost > 0) {
+                    return cost;
+                }
+                else {
+                    cout << "У клиента " << clientName << " нет звонков." << endl;
+                    return 0;
+                }
             }
         }
+        cout << "Клиент с именем " << clientName << " не найден." << endl;
         return 0;
     }
 
@@ -135,6 +144,7 @@ void displayMenu() {
     cout << "7. Вычислить общую стоимость всех звонков." << endl;
     cout << "0. Выйти." << endl;
 }
+
 
 double getPositiveDouble() {
     string input;
@@ -170,6 +180,7 @@ bool isValidClientName(const string& name) {
     }
     return true;
 }
+
 
 int main() {
     setlocale(LC_ALL, "Russian");
@@ -228,15 +239,26 @@ int main() {
             cout << "Введите имя клиента: ";
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, clientName);
+
             cout << "Введите направление звонка: ";
             getline(cin, destination);
+
             cout << "Введите длительность звонка (в минутах): ";
             duration = getPositiveDouble();
+
+           
+            if (atc.getTariffs().empty()) {
+                cout << "Нет доступных тарифов. Пожалуйста, добавьте тариф перед добавлением звонка." << endl;
+                break; 
+            }
 
             cout << "Доступные тарифы:" << endl;
             atc.showTariffs();
             cout << "Введите название тарифа: ";
+            cin.get();
             getline(cin, tariffTitle);
+
+            
             atc.addCallToClient(clientName, Call(destination, duration, tariffTitle));
             cout << "Звонок добавлен." << endl;
             break;
