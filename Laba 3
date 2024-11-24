@@ -1,0 +1,184 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include <limits>
+#include <sstream>
+#include <memory> 
+using namespace std;
+
+
+class Tariff {
+public:
+    virtual double getPrice() const = 0; 
+    virtual string getTitle() const = 0; 
+    virtual void displayInfo() const = 0; 
+    virtual ~Tariff() {}
+};
+
+
+class RegularTariff : public Tariff {
+private:
+    string title;
+    double price;
+
+public:
+    RegularTariff(const string& title, double price) : title(title), price(price) {}
+
+    double getPrice() const override { return price; }
+    string getTitle() const override { return title; }
+
+    void displayInfo() const override {
+        cout << "Обычный тариф: " << title << ", Цена за минуту: " << fixed << setprecision(2) << price << " рублей." << endl;
+    }
+};
+
+
+class DiscountTariff : public Tariff {
+private:
+    string title;
+    double price;
+    double discount; 
+
+public:
+    DiscountTariff(const string& title, double price, double discount)
+        : title(title), price(price), discount(discount) {}
+
+    double getPrice() const override {
+        return price * (1 - discount / 100); 
+    }
+
+    string getTitle() const override { return title; }
+
+    void displayInfo() const override {
+        cout << "Льготный тариф: " << title << ", Цена за минуту со скидкой: " << fixed << setprecision(2) << getPrice() << " рублей." << endl;
+    }
+};
+
+
+class ATC {
+private:
+    vector<unique_ptr<Tariff>> tariffs; 
+
+public:
+    void addRegularTariff(const string& title, double price) {
+        tariffs.push_back(make_unique<RegularTariff>(title, price));
+    }
+
+    void addDiscountTariff(const string& title, double price, double discount) {
+        tariffs.push_back(make_unique<DiscountTariff>(title, price, discount));
+    }
+
+    void showTariffs() const {
+        for (const auto& tariff : tariffs) {
+            tariff->displayInfo();
+        }
+    }
+
+    double calculateAveragePrice() const {
+        if (tariffs.empty()) return 0; 
+        double total = 0;
+        for (const auto& tariff : tariffs) {
+            total += tariff->getPrice();
+        }
+        return total / tariffs.size();
+    }
+
+    const vector<unique_ptr<Tariff>>& getTariffs() const { 
+        return tariffs;
+    }
+};
+
+void displayMenu() {
+    cout << "Меню:" << endl;
+    cout << "1. Добавить обычный тариф." << endl;
+    cout << "2. Добавить льготный тариф." << endl;
+    cout << "3. Показать тарифы." << endl;
+    cout << "4. Вычислить среднюю стоимость тарифов." << endl;
+    cout << "0. Выйти." << endl;
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    ATC atc;
+    int input;
+
+    cout << "Добро пожаловать в АТС." << endl;
+    while (true) {
+        displayMenu();
+        cout << "Выберите действие: ";
+        cin >> input;
+
+        
+        if (cin.fail()) {
+            cin.clear(); 
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+            cout << "Неверный ввод. Пожалуйста, введите число." << endl;
+            continue; 
+        }
+
+        switch (input) {
+        case 1: {
+            string title;
+            double price;
+            cout << "Введите название тарифа: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+            getline(cin, title);
+            cout << "Введите цену тарифа за минуту: ";
+            cin >> price;
+            atc.addRegularTariff(title, price);
+            cout << "Обычный тариф добавлен." << endl;
+            break;
+        }
+
+        case 2: {
+            string title;
+            double price, discount;
+            cout << "Введите название льготного тарифа: ";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+            getline(cin, title);
+            cout << "Введите цену тарифа за минуту: ";
+            cin >> price;
+            cout << "Введите скидку (в процентах): ";
+            cin >> discount;
+            atc.addDiscountTariff(title, price, discount);
+            cout << "Льготный тариф добавлен." << endl;
+            break;
+        }
+
+        case 3: {
+            if (atc.getTariffs().empty()) {
+                cout << "Тарифов нет. Пожалуйста, добавьте тариф." << endl;
+            }
+            else {
+                cout << "Доступные тарифы:" << endl;
+                atc.showTariffs();
+            }
+            break;
+        }
+
+        case 4: {
+            double averagePrice = atc.calculateAveragePrice();
+            if (averagePrice == 0) {
+                cout << "Нет тарифов для вычисления средней стоимости." << endl;
+            }
+            else {
+                cout << "Средняя стоимость тарифов: " << fixed << setprecision(2) << averagePrice << " рублей." << endl;
+            }
+            break;
+        }
+
+        case 0: {
+            cout << "Выход из программы." << endl;
+            return 0;
+        }
+
+        default: {
+            cout << "Неверный выбор. Попробуйте снова." << endl;
+            break;
+        }
+        }
+    }
+
+    return 0;
+}
