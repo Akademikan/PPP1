@@ -5,6 +5,7 @@
 #include <limits>
 #include <cctype> 
 #include <sstream>
+
 using namespace std;
 
 class Tariff {
@@ -85,7 +86,7 @@ public:
         for (auto& client : clients) {
             if (client.getName() == clientName) {
                 client.addCall(call);
-                cout << "Звонок добавлен для клиента " << clientName << "." << endl; 
+                cout << "Звонок добавлен для клиента " << clientName << "." << endl;
                 return;
             }
         }
@@ -129,8 +130,8 @@ public:
         return 0;
     }
 
-    const vector<Tariff>& getTariffs() const { return tariffs; } 
-    const vector<Client>& getClients() const { return clients; } 
+    const vector<Tariff>& getTariffs() const { return tariffs; }
+    const vector<Client>& getClients() const { return clients; }
 };
 
 void displayMenu() {
@@ -162,6 +163,16 @@ double getPositiveDouble() {
 }
 
 
+bool isNumber(const string& str) {
+    for (char c : str) {
+        if (!isdigit(c) && c != '.') {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool isValidTariffTitle(const string& title) {
     for (char c : title) {
         if (!isalpha(c) && !isspace(c)) {
@@ -185,21 +196,33 @@ bool isValidClientName(const string& name) {
 int main() {
     setlocale(LC_ALL, "Russian");
     ATC atc;
-    int input;
 
     cout << "Добро пожаловать в АТС." << endl;
 
     while (true) {
         displayMenu();
+        string input;
         cout << "Выберите действие: ";
-        input = 0;
         cin >> input;
 
-        switch (input) {
+        if (!isNumber(input)) {
+            cout << "Ошибка: введите число от 0 до 7." << endl;
+            continue;
+        }
 
+        int choice = stoi(input);
+
+        if (choice < 0 || choice > 7) {
+            cout << "Ошибка: введите число от 0 до 7." << endl;
+            continue;
+        }
+
+        switch (choice) {
         case 1: {
             string title;
+            string priceInput;
             double price;
+
             cout << "Введите название тарифа: ";
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, title);
@@ -209,12 +232,24 @@ int main() {
                 getline(cin, title);
             }
 
-            cout << "Введите цену тарифа за минуту: ";
-            price = getPositiveDouble();
+            cout << "Введите цену тарифа за минуту (не более 100 рублей): ";
+            while (true) {
+                cin >> priceInput;
+                if (!isNumber(priceInput) || !(istringstream(priceInput) >> price) || price < 0) {
+                    cout << "Ошибка: введите положительное число для цены тарифа." << endl;
+                    continue;
+                }
+                if (price > 100) {
+                    cout << "Ошибка: цена не должна превышать 100 рублей. Попробуйте снова: ";
+                }
+                else {
+                    break;
+                }
+            }
+
             atc.addTariff(title, price);
             cout << "Тариф добавлен." << endl;
             break;
-
         }
 
         case 2: {
@@ -235,6 +270,7 @@ int main() {
 
         case 3: {
             string clientName, destination, tariffTitle;
+            string durationInput;
             double duration;
             cout << "Введите имя клиента: ";
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -243,26 +279,37 @@ int main() {
             cout << "Введите направление звонка: ";
             getline(cin, destination);
 
-            cout << "Введите длительность звонка (в минутах): ";
-            duration = getPositiveDouble();
+            cout << "Введите длительность звонка (в минутах, не более 1000): ";
+            while (true) {
+                cin >> durationInput;
+                if (!isNumber(durationInput) || !(istringstream(durationInput) >> duration) || duration < 0) {
+                    cout << "Ошибка: введите положительное число для длительности звонка." << endl;
+                    continue;
+                }
+                if (duration > 1000) {
+                    cout << "Ошибка: длительность звонка не должна превышать 1000 минут. Попробуйте снова: ";
+                }
+                else {
+                    break;
+                }
+            }
 
-           
             if (atc.getTariffs().empty()) {
                 cout << "Нет доступных тарифов. Пожалуйста, добавьте тариф перед добавлением звонка." << endl;
-                break; 
+                break;
             }
 
             cout << "Доступные тарифы:" << endl;
             atc.showTariffs();
             cout << "Введите название тарифа: ";
-            cin.get();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, tariffTitle);
 
-            
             atc.addCallToClient(clientName, Call(destination, duration, tariffTitle));
             cout << "Звонок добавлен." << endl;
             break;
         }
+
 
         case 4: {
             if (atc.getTariffs().empty()) {
