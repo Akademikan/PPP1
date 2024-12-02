@@ -5,6 +5,8 @@
 #include <limits>
 #include <sstream>
 #include <memory> 
+#include <cctype>
+
 using namespace std;
 
 
@@ -98,34 +100,81 @@ void displayMenu() {
     cout << "0. Выйти." << endl;
 }
 
+bool isNumber(const string& str) {
+    for (char c : str) {
+        if (!isdigit(c) && c != '.') {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool isValidTariffTitle(const string& title) {
+    if (title.empty()) {
+        return false;
+    }
+    for (char c : title) {
+        if (!isalpha(c) && !isspace(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int main() {
     setlocale(LC_ALL, "Russian");
     ATC atc;
-    int input;
+    
 
     cout << "Добро пожаловать в АТС." << endl;
+
     while (true) {
         displayMenu();
+        string input;
         cout << "Выберите действие: ";
         cin >> input;
 
-        
-        if (cin.fail()) {
-            cin.clear(); 
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
-            cout << "Неверный ввод. Пожалуйста, введите число." << endl;
-            continue; 
+        if (!isNumber(input)) {
+            cout << "Ошибка: введите число от 0 до 4." << endl;
+            continue;
         }
 
-        switch (input) {
+        int choice = stoi(input);
+
+        if (choice < 0 || choice > 7) {
+            cout << "Ошибка: введите число от 0 до 4." << endl;
+            continue;
+        }
+
+        switch (choice) {
         case 1: {
             string title;
+            string priceInput;
             double price;
             cout << "Введите название тарифа: ";
             cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
             getline(cin, title);
-            cout << "Введите цену тарифа за минуту: ";
-            cin >> price;
+
+            while (!isValidTariffTitle(title)) {
+                cout << "Название тарифа должно содержать только буквы и пробелы. Попробуйте снова: ";
+                getline(cin, title);
+            }
+
+            cout << "Введите цену тарифа за минуту (не более 100 рублей): ";
+            while (true) {
+                cin >> priceInput;
+                if (!isNumber(priceInput) || !(istringstream(priceInput) >> price) || price < 0) {
+                    cout << "Ошибка: введите положительное число для цены тарифа." << endl;
+                    continue;
+                }
+                if (price > 100) {
+                    cout << "Ошибка: цена не должна превышать 100 рублей. Попробуйте снова: ";
+                }
+                else {
+                    break;
+                }
+            }
+
             atc.addRegularTariff(title, price);
             cout << "Обычный тариф добавлен." << endl;
             break;
@@ -133,14 +182,50 @@ int main() {
 
         case 2: {
             string title;
+            string priceInput;
+            string discountInput;
             double price, discount;
+
             cout << "Введите название льготного тарифа: ";
             cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
             getline(cin, title);
-            cout << "Введите цену тарифа за минуту: ";
-            cin >> price;
+
+            while (!isValidTariffTitle(title)) {
+                cout << "Название тарифа должно содержать только буквы и пробелы. Попробуйте снова: ";
+                getline(cin, title);
+            }
+
+            cout << "Введите цену тарифа за минуту (не более 100 рублей): ";
+            while (true) {
+                cin >> priceInput;
+                if (!isNumber(priceInput) || !(istringstream(priceInput) >> price) || price < 0) {
+                    cout << "Ошибка: введите положительное число для цены тарифа." << endl;
+                    continue;
+                }
+                if (price > 100) {
+                    cout << "Ошибка: цена не должна превышать 100 рублей. Попробуйте снова: ";
+                }
+                else {
+                    break;
+                }
+            }
+
             cout << "Введите скидку (в процентах): ";
-            cin >> discount;
+            while (true) {
+                cin >> discountInput;
+                if (!isNumber(discountInput) || !(istringstream(discountInput) >> discount) || discount < 0) {
+                    cout << "Ошибка: введите положительное число для скидки." << endl;
+                    continue;
+                }
+                if (discount > 100) {
+                    cout << "Ошибка: скидка не должна превышать 100%. Попробуйте снова: ";
+                }
+                else {
+                    break;
+                }
+            }
+
+
             atc.addDiscountTariff(title, price, discount);
             cout << "Льготный тариф добавлен." << endl;
             break;
